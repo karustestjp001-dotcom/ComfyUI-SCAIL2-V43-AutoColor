@@ -1,0 +1,13 @@
+[project]
+name = "comfyui-scail2-v43-autocolor"
+description = "SCAIL-2 scheduled long-video node with integrated V4.3 chunk color correction."
+version = "1.0.0"
+license = { text = "MIT" }
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor"
+
+[tool.comfy]
+PublisherId = "karustestjp001-dotcom"
+DisplayName = "SCAIL2 V4.3 Auto Color"
