@@ -12,6 +12,12 @@ It combines the SCAIL-2 scheduled long-video Internal SAM scheduler with
 after every generated chunk. The correction receives the actual overlap for
 that chunk, including a reduced `boundary_overlap` when a reference changes.
 
+The scheduler exposes three deterministic color modes:
+
+- `v43`: CustomNodeKit V4.3 auto correction;
+- `original`: the original scheduler `ColorTransfer` / RGB overlap correction;
+- `off`: no post-decode color correction.
+
 ## RunningHub installation
 
 1. Open `Manager` in the RunningHub cloud workspace.
@@ -29,17 +35,21 @@ that chunk, including a reduced `boundary_overlap` when a reference changes.
 The package is self-contained for the V4.3 integration. Installing the full
 `ComfyUI-CustomNodeKit` separately is not required for this workflow.
 
-## Integrated V4.3 settings
+## Integrated color settings
 
 ```text
-mode = auto
-max_offset = 0.02
-residual_strength = 0.4
+color_correction = v43 | original | off
+residual_strength = 0.2 (adjustable from 0.0 to 1.0; V4.3 only)
+V4.3 mode = auto
+V4.3 max_offset = 0.02
 overlap_count = actual chunk overlap
 ```
 
 Do not add a second color-correction node after the final frames; this scheduler
 already performs correction inside its chunk loop.
+
+V4.3 failures are reported as errors instead of silently falling back to the
+original correction, so A/B tests always reflect the selected mode.
 
 ## Credits
 

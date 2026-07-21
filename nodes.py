@@ -11,6 +11,7 @@ import torch
 
 CATEGORY = "SCAIL-2/Scheduled"
 MAX_REFERENCES = 8
+COLOR_CORRECTION_MODES = ("v43", "original", "off")
 DEFAULT_PLAN = """# frames | reference | prompt | negative | boundary_overlap
 49 | 1 | first segment prompt | |
 121 | 2 | second segment prompt | | 1
@@ -89,6 +90,27 @@ def _node_result(value: Any) -> tuple:
     if isinstance(value, tuple):
         return value
     return (value,)
+
+
+def _normalize_color_correction_mode(value: Any) -> str:
+    if isinstance(value, bool):
+        return "v43" if value else "off"
+    normalized = str(value or "v43").strip().lower()
+    aliases = {
+        "auto": "v43",
+        "on": "v43",
+        "true": "v43",
+        "native": "original",
+        "none": "off",
+        "false": "off",
+    }
+    normalized = aliases.get(normalized, normalized)
+    if normalized not in COLOR_CORRECTION_MODES:
+        raise ValueError(
+            f"Unsupported color_correction mode '{value}'. "
+            f"Expected one of: {', '.join(COLOR_CORRECTION_MODES)}."
+        )
+    return normalized
 
 
 def _get_scail_nodes_module():
@@ -579,71 +601,69 @@ def _fallback_match_chunk_color_to_overlap(
     return corrected.contiguous(), info
 
 
-def _match_chunk_color_like_original(
+def _match_chunk_color_v43(
+    frames: torch.Tensor,
+    current_overlap: Optional[torch.Tensor],
+    reference_overlap: Optional[torch.Tensor],
+    residual_strength: float,
+) -> tuple[torch.Tensor, dict[str, Any]]:
+    if current_overlap is None or reference_overlap is None:
+        raise RuntimeError("V4.3 color correction requires current and previous overlap frames.")
+    overlap_count = min(int(current_overlap.shape[0]), int(reference_overlap.shape[0]))
+    if overlap_count <= 0:
+        raise RuntimeError("V4.3 color correction received an empty overlap.")
+
+    import nodes
+
+    node_cls = nodes.NODE_CLASS_MAPPINGS.get("AutoColorDriftCorrection")
+    if node_cls is None:
+        raise RuntimeError("AutoColorDriftCorrection is not registered.")
+
+    current = current_overlap[-overlap_count:].contiguous()
+    previous = reference_overlap[-overlap_count:].contiguous()
+    combined = torch.cat([current, frames], dim=0).contiguous()
+    corrected_images, drift_info = node_cls().correct(
+        combined,
+        mode="auto",
+        overlap_count=overlap_count,
+        prev_frames=previous,
+        seam_strength=0.0,
+        max_offset=0.02,
+        residual_strength=float(residual_strength),
+    )
+    corrected = corrected_images[overlap_count:].detach().cpu().contiguous()
+    if list(corrected.shape) != list(frames.shape):
+        raise RuntimeError(
+            "AutoColorDriftCorrection returned an unexpected shape: "
+            f"{_shape(corrected)} instead of {_shape(frames)}."
+        )
+
+    drift_summary: dict[str, Any] = {}
+    try:
+        drift_summary = json.loads(str(drift_info).rsplit("\n\n", 1)[-1])
+    except (TypeError, ValueError, json.JSONDecodeError):
+        pass
+    return corrected.clamp(0, 1), {
+        "applied": True,
+        "method": "AutoColorDriftCorrectionV43",
+        "overlap_frames": overlap_count,
+        "mode": "auto",
+        "max_offset": 0.02,
+        "residual_strength": float(residual_strength),
+        "drift": drift_summary,
+    }
+
+
+def _match_chunk_color_original(
     frames: torch.Tensor,
     reference_frame: Optional[torch.Tensor],
     current_overlap: Optional[torch.Tensor],
     reference_overlap: Optional[torch.Tensor],
 ) -> tuple[torch.Tensor, dict[str, Any]]:
-    # Run CustomNodeKit V4.3 on the overlap plus the new frames so correction
-    # happens inside the scheduler before corrected frames feed the next chunk.
-    v43_info: dict[str, Any] = {
-        "applied": False,
-        "method": "AutoColorDriftCorrectionV43",
-    }
-    if current_overlap is not None and reference_overlap is not None:
-        overlap_count = min(int(current_overlap.shape[0]), int(reference_overlap.shape[0]))
-        if overlap_count > 0:
-            try:
-                import nodes
-
-                node_cls = nodes.NODE_CLASS_MAPPINGS.get("AutoColorDriftCorrection")
-                if node_cls is None:
-                    v43_info["reason"] = "AutoColorDriftCorrection_not_registered"
-                else:
-                    current = current_overlap[-overlap_count:].contiguous()
-                    previous = reference_overlap[-overlap_count:].contiguous()
-                    combined = torch.cat([current, frames], dim=0).contiguous()
-                    corrected_images, drift_info = node_cls().correct(
-                        combined,
-                        mode="auto",
-                        overlap_count=overlap_count,
-                        prev_frames=previous,
-                        seam_strength=0.5,
-                        max_offset=0.02,
-                        residual_strength=0.4,
-                    )
-                    corrected = corrected_images[overlap_count:].detach().cpu().contiguous()
-                    if list(corrected.shape) != list(frames.shape):
-                        v43_info["reason"] = f"shape_mismatch:{_shape(corrected)}"
-                    else:
-                        drift_summary: dict[str, Any] = {}
-                        try:
-                            drift_summary = json.loads(str(drift_info).rsplit("\n\n", 1)[-1])
-                        except (TypeError, ValueError, json.JSONDecodeError):
-                            pass
-                        v43_info.update(
-                            {
-                                "applied": True,
-                                "overlap_frames": overlap_count,
-                                "mode": "auto",
-                                "max_offset": 0.02,
-                                "residual_strength": 0.4,
-                                "drift": drift_summary,
-                            }
-                        )
-                        return corrected.clamp(0, 1), v43_info
-            except Exception as exc:
-                v43_info["reason"] = f"AutoColorDriftCorrection_error:{type(exc).__name__}:{exc}"
-        else:
-            v43_info["reason"] = "empty_overlap"
-    else:
-        v43_info["reason"] = "missing_overlap"
 
     if reference_frame is not None and int(reference_frame.shape[0]) > 0:
         corrected, info = _run_original_color_transfer(frames, reference_frame[-1:].contiguous())
         if info.get("applied"):
-            info["v43_fallback_reason"] = v43_info.get("reason", "unknown")
             return corrected, info
         fallback_reason = info.get("reason", "unknown")
     else:
@@ -652,7 +672,6 @@ def _match_chunk_color_like_original(
     corrected, fallback = _fallback_match_chunk_color_to_overlap(frames, current_overlap, reference_overlap)
     fallback["method"] = "fallback_rgb_overlap"
     fallback["fallback_reason"] = fallback_reason
-    fallback["v43_fallback_reason"] = v43_info.get("reason", "unknown")
     return corrected, fallback
 
 
@@ -910,7 +929,23 @@ class SCAIL2ScheduledLongVideo:
                 "max_chunk_frames": ("INT", {"default": 81, "min": 17, "max": 81, "step": 4}),
                 "overlap_frames": ("INT", {"default": 5, "min": 0, "max": 33, "step": 1}),
                 "reference_count": ("INT", {"default": 2, "min": 1, "max": MAX_REFERENCES, "step": 1}),
-                "color_correction": ("BOOLEAN", {"default": True}),
+                "color_correction": (
+                    list(COLOR_CORRECTION_MODES),
+                    {
+                        "default": "v43",
+                        "tooltip": "v43=V4.3 auto correction; original=the scheduler's original ColorTransfer/RGB correction; off=no correction.",
+                    },
+                ),
+                "residual_strength": (
+                    "FLOAT",
+                    {
+                        "default": 0.2,
+                        "min": 0.0,
+                        "max": 1.0,
+                        "step": 0.05,
+                        "tooltip": "V4.3 second-pass residual correction strength. Ignored by original and off modes.",
+                    },
+                ),
             },
             "optional": optional,
         }
@@ -948,12 +983,16 @@ class SCAIL2ScheduledLongVideo:
         max_chunk_frames: int,
         overlap_frames: int,
         reference_count: int,
-        color_correction: bool,
+        color_correction: str,
+        residual_strength: float,
         pose_video_mask=None,
         **kwargs,
     ):
         if not isinstance(pose_video, torch.Tensor) or pose_video.ndim != 4:
             raise ValueError("pose_video must be a ComfyUI IMAGE tensor.")
+
+        color_correction = _normalize_color_correction_mode(color_correction)
+        residual_strength = min(1.0, max(0.0, float(residual_strength)))
 
         call_cache_key = _stable_fingerprint(
             {
@@ -973,7 +1012,8 @@ class SCAIL2ScheduledLongVideo:
                 "max_chunk_frames": int(max_chunk_frames),
                 "overlap_frames": int(overlap_frames),
                 "reference_count": int(reference_count),
-                "color_correction": bool(color_correction),
+                "color_correction": color_correction,
+                "residual_strength": residual_strength,
                 "pose_video_mask": _tensor_fingerprint(pose_video_mask),
                 "dynamic_inputs": _cache_marker(kwargs),
             }
@@ -1187,15 +1227,23 @@ class SCAIL2ScheduledLongVideo:
                 kept = decoded[discard_head : discard_head + wanted_keep].contiguous()
                 if int(kept.shape[0]) <= 0:
                     raise RuntimeError("A chunk produced no keepable frames.")
-                if color_correction and discard_head > 0:
-                    kept, color_summary = _match_chunk_color_like_original(
+                if discard_head > 0 and color_correction == "v43":
+                    kept, color_summary = _match_chunk_color_v43(
+                        kept, current_overlap, reference_overlap, residual_strength
+                    )
+                elif discard_head > 0 and color_correction == "original":
+                    kept, color_summary = _match_chunk_color_original(
                         kept,
                         previous_frames[-1:].contiguous() if previous_frames is not None else None,
                         current_overlap,
                         reference_overlap,
                     )
                 else:
-                    color_summary = {"applied": False}
+                    color_summary = {
+                        "applied": False,
+                        "method": color_correction,
+                        "reason": "disabled" if color_correction == "off" else "no_previous_overlap",
+                    }
 
                 stitched.append(kept.detach().cpu().contiguous())
                 if replacement_mode:
@@ -1272,6 +1320,8 @@ class SCAIL2ScheduledLongVideo:
             "max_chunk_frames": int(max_chunk_frames),
             "overlap_frames": int(overlap),
             "reference_count": int(active_reference_count),
+            "color_correction": color_correction,
+            "residual_strength": residual_strength if color_correction == "v43" else None,
             "cfg": float(cfg),
             "seed_start": int(seed),
             "segments": segments,
@@ -1321,7 +1371,23 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
                 "max_chunk_frames": ("INT", {"default": 81, "min": 17, "max": 81, "step": 4}),
                 "overlap_frames": ("INT", {"default": 5, "min": 0, "max": 33, "step": 1}),
                 "reference_count": ("INT", {"default": 2, "min": 1, "max": MAX_REFERENCES, "step": 1}),
-                "color_correction": ("BOOLEAN", {"default": True}),
+                "color_correction": (
+                    list(COLOR_CORRECTION_MODES),
+                    {
+                        "default": "v43",
+                        "tooltip": "v43=V4.3 auto correction; original=the scheduler's original ColorTransfer/RGB correction; off=no correction.",
+                    },
+                ),
+                "residual_strength": (
+                    "FLOAT",
+                    {
+                        "default": 0.2,
+                        "min": 0.0,
+                        "max": 1.0,
+                        "step": 0.05,
+                        "tooltip": "V4.3 second-pass residual correction strength. Ignored by original and off modes.",
+                    },
+                ),
                 "object_indices": (
                     "STRING",
                     {
@@ -1375,7 +1441,8 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
         max_chunk_frames: int,
         overlap_frames: int,
         reference_count: int,
-        color_correction: bool,
+        color_correction: str,
+        residual_strength: float,
         object_indices: str = "",
         reference_object_indices: str = "",
         sort_by: str = "left_to_right",
@@ -1388,6 +1455,9 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
     ):
         if not isinstance(pose_video, torch.Tensor) or pose_video.ndim != 4:
             raise ValueError("pose_video must be a ComfyUI IMAGE tensor.")
+
+        color_correction = _normalize_color_correction_mode(color_correction)
+        residual_strength = min(1.0, max(0.0, float(residual_strength)))
 
         active_reference_count = max(1, min(MAX_REFERENCES, int(reference_count)))
         segments = _parse_plan(segment_plan, pose_frame_count=int(pose_video.shape[0]), max_frames=max_frames)
@@ -1426,7 +1496,8 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
                 "max_chunk_frames": int(max_chunk_frames),
                 "overlap_frames": int(overlap_frames),
                 "reference_count": int(reference_count),
-                "color_correction": bool(color_correction),
+                "color_correction": color_correction,
+                "residual_strength": residual_strength,
                 "object_indices": object_indices,
                 "reference_object_indices": reference_object_indices,
                 "sort_by": sort_by,
@@ -1463,6 +1534,7 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
                 overlap_frames,
                 reference_count,
                 color_correction,
+                residual_strength,
                 **generate_kwargs,
             )
             try:
@@ -1560,6 +1632,7 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
             overlap_frames,
             reference_count,
             color_correction,
+            residual_strength,
             **generate_kwargs,
         )
         try:
@@ -1597,5 +1670,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "SCAIL2MultiReferenceColoredMask": "SCAIL-2 Multi Reference Colored Mask",
     "SCAIL2ScheduledLongVideo": "SCAIL-2 Scheduled Long Video",
     "SCAIL2ScheduledLongVideoWithSAM": "SCAIL-2 Scheduled Long Video (Internal SAM)",
-    "SCAIL2ScheduledLongVideoWithSAMV43": "SCAIL-2 Scheduled Long Video (Internal SAM + V4.3 Color)",
+    "SCAIL2ScheduledLongVideoWithSAMV43": "SCAIL-2 Scheduled Long Video (Internal SAM + Color Modes)",
 }

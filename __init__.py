@@ -11,7 +11,7 @@ NODE_CLASS_MAPPINGS = {
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "AutoColorDriftCorrection": "Auto Color Drift Correction V4.3 (two-pass)",
-    SCHEDULER_NODE_KEY: "SCAIL-2 Scheduled Long Video (Internal SAM + V4.3 Color)",
+    SCHEDULER_NODE_KEY: "SCAIL-2 Scheduled Long Video (Internal SAM + Color Modes)",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
