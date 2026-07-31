@@ -17,6 +17,16 @@ frontend `1.47.11`。工作流 JSON 仍保留 V4.3 的 frontend `1.45.15` 與原
 不得替換、刪除、增加或重新接線任何功能節點，也不得修改節點參數、
 群組、版面、輸入／輸出插槽或自訂節點版本資訊。
 
+## 已知 RunningHub 相容問題
+
+- V4.3 曾出現過相同的模型驗證錯誤：本機工作流把模型保存成
+  `wan\\檔名`，但 RunningHub 的模型 combo 使用扁平檔名。
+- 典型訊息為 `Prompt outputs failed validation`，並在
+  `LoraLoaderModelOnly` 或 `DiffusionModelLoaderKJ` 顯示
+  `Value not in list`。
+- RH 建置時必須移除這兩個節點模型值的 `wan\\` 前綴；不得把這個問題
+  誤判為接線、登入或瀏覽器故障。
+
 ## 必須完整保留
 
 - V4.3 分段自動校色及原有三種校色模式。
