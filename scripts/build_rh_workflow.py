@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any
 
 
-CORE_VERSION = "0.29.0"
-FRONTEND_VERSION = "1.47.10"
+CORE_VERSION = "0.29.2"
+FRONTEND_VERSION = "1.47.11"
 V43_REPOSITORY_ID = "karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor"
 V43_REGISTRY_ID = "comfyui-scail2-v43-autocolor"
 V43_PACKAGE_VERSION = "2.0.0"
@@ -339,7 +339,7 @@ def build_workflow(source: dict[str, Any]) -> dict[str, Any]:
         elif node["id"] == 50:
             node["widgets_values"] = [
                 "SCAIL-2 V5.0 RH 直用版\n\n"
-                "Tested: ComfyUI 0.29.0 / frontend 1.47.10\n"
+                "Tested: ComfyUI 0.29.2 / frontend 1.47.11\n"
                 "Required Git repositories:\n"
                 "https://github.com/karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor\n"
                 "https://github.com/TTPlanetPig/comfyui_scail2_multi_cond\n"

@@ -3,9 +3,9 @@
   "workflow_version": "5.0.0",
   "tested_at": "2026-07-31",
   "comfyui": {
-    "version": "0.29.0",
-    "commit": "a8c44f9b2a0678ac4082e3529a3f43db7472acfe",
-    "frontend": "1.47.10"
+    "version": "0.29.2",
+    "commit": "322122449c9d2ba8b8df1bb517364527dd0615f1",
+    "frontend": "1.47.11"
   },
   "custom_nodes": [
     {

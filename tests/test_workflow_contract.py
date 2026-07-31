@@ -23,8 +23,8 @@ class RunningHubWorkflowContractTests(unittest.TestCase):
         self.dependencies = json.loads(DEPENDENCY_PATH.read_text(encoding="utf-8"))
 
     def test_workflow_targets_the_tested_core_and_frontend(self):
-        self.assertEqual(self.dependencies["comfyui"]["version"], "0.29.0")
-        self.assertEqual(self.workflow["extra"]["frontendVersion"], "1.47.10")
+        self.assertEqual(self.dependencies["comfyui"]["version"], "0.29.2")
+        self.assertEqual(self.workflow["extra"]["frontendVersion"], "1.47.11")
 
     def test_workflow_uses_rh_portable_nodes_only(self):
         node_types = {node["type"] for node in self.workflow["nodes"]}

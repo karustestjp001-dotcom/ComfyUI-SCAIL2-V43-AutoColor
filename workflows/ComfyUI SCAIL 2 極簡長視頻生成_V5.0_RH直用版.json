@@ -65,7 +65,7 @@
       "properties": {
         "Node name for S&R": "CLIPLoader",
         "cnr_id": "comfy-core",
-        "ver": "0.29.0",
+        "ver": "0.29.2",
         "models": [
           {
             "name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
@@ -120,7 +120,7 @@
       "properties": {
         "Node name for S&R": "CLIPVisionLoader",
         "cnr_id": "comfy-core",
-        "ver": "0.29.0",
+        "ver": "0.29.2",
         "models": [
           {
             "name": "clip_vision_h.safetensors",
@@ -173,7 +173,7 @@
       "properties": {
         "Node name for S&R": "VAELoader",
         "cnr_id": "comfy-core",
-        "ver": "0.29.0",
+        "ver": "0.29.2",
         "models": [
           {
             "name": "wan_2.1_vae.safetensors",
@@ -548,7 +548,7 @@
       "properties": {
         "Node name for S&R": "CheckpointLoaderSimple",
         "cnr_id": "comfy-core",
-        "ver": "0.29.0",
+        "ver": "0.29.2",
         "models": [
           {
             "name": "sam3.1_multiplex_fp16.safetensors",
@@ -766,7 +766,7 @@
       "properties": {
         "Node name for S&R": "LoraLoaderModelOnly",
         "cnr_id": "comfy-core",
-        "ver": "0.29.0",
+        "ver": "0.29.2",
         "models": [
           {
             "name": "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
@@ -824,7 +824,7 @@
       "properties": {
         "Node name for S&R": "UNETLoader",
         "cnr_id": "comfy-core",
-        "ver": "0.29.0",
+        "ver": "0.29.2",
         "models": [
           {
             "name": "wan2.1_14B_SCAIL_2_fp8_scaled.safetensors",
@@ -916,7 +916,7 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        "SCAIL-2 V5.0 RH 直用版\n\nTested: ComfyUI 0.29.0 / frontend 1.47.10\nRequired Git repositories:\nhttps://github.com/karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor\nhttps://github.com/TTPlanetPig/comfyui_scail2_multi_cond\nhttps://github.com/kijai/ComfyUI-GIMM-VFI\nhttps://github.com/Kosinkadink/ComfyUI-VideoHelperSuite\nhttps://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI\n\nhttps://github.com/rgthree/rgthree-comfy\n\nUse MultiImageLoader to batch-upload reference images, then upload one driving video before queueing. Use the Frame Interpolation group switch to enable or bypass GIMM interpolation.\nRelighting LoRA is for replacement mode and is intentionally not enabled in this animation workflow."
+        "SCAIL-2 V5.0 RH 直用版\n\nTested: ComfyUI 0.29.2 / frontend 1.47.11\nRequired Git repositories:\nhttps://github.com/karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor\nhttps://github.com/TTPlanetPig/comfyui_scail2_multi_cond\nhttps://github.com/kijai/ComfyUI-GIMM-VFI\nhttps://github.com/Kosinkadink/ComfyUI-VideoHelperSuite\nhttps://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI\n\nhttps://github.com/rgthree/rgthree-comfy\n\nUse MultiImageLoader to batch-upload reference images, then upload one driving video before queueing. Use the Frame Interpolation group switch to enable or bypass GIMM interpolation.\nRelighting LoRA is for replacement mode and is intentionally not enabled in this animation workflow."
       ],
       "color": "#432",
       "bgcolor": "#653"
@@ -1179,7 +1179,7 @@
       "properties": {
         "Node name for S&R": "ImageScale",
         "cnr_id": "comfy-core",
-        "ver": "0.29.0"
+        "ver": "0.29.2"
       },
       "widgets_values": [
         "lanczos",
@@ -2821,7 +2821,7 @@
       4
     ],
     "VHS_latentpreviewrate": 0,
-    "frontendVersion": "1.47.10",
+    "frontendVersion": "1.47.11",
     "VHS_latentpreview": false,
     "ds": {
       "scale": 0.7247295000000201,
@@ -2832,7 +2832,7 @@
     },
     "scail2_v5": {
       "workflow_version": "5.0.0",
-      "tested_core": "0.29.0",
+      "tested_core": "0.29.2",
       "purpose": "RunningHub portable long-video animation"
     }
   },

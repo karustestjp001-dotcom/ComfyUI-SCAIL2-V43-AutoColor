@@ -14,7 +14,7 @@ after every generated chunk. The correction receives the actual overlap for
 that chunk, including a reduced `boundary_overlap` when a reference changes.
 
 V5.0 rebases the scheduler on
-`TTPlanetPig/comfyui_scail2_multi_cond@aac3315`, targets ComfyUI `0.29.0`, and
+`TTPlanetPig/comfyui_scail2_multi_cond@aac3315`, targets ComfyUI `0.29.2`, and
 removes KJNodes and post-processing dependencies from the RH workflow graph.
 It keeps WhatDreamsCost's batch image loader and rgthree's visible group
 bypasser because they are user-facing workflow controls. The V4.3 correction
@@ -38,7 +38,7 @@ The scheduler exposes three deterministic color modes:
 
 ## RunningHub installation
 
-1. Use a RunningHub workspace with ComfyUI `0.29.0` or a compatible newer
+1. Use a RunningHub workspace with ComfyUI `0.29.2` or a compatible newer
    version.
 2. Open `Manager` and install these repositories through `Install via Git URL`:
 
