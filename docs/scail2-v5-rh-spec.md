@@ -7,6 +7,8 @@ V5.0.2 以「ComfyUI SCAIL 2 極簡長視頻生成 V4.3 自動校色 RH
 允許的差異只有：
 
 - 清除來源電腦的圖片檔名、影片檔名與影片預覽暫存。
+- 將 `LoraLoaderModelOnly` 與 `DiffusionModelLoaderKJ` 的本機 `wan\\`
+  子資料夾前綴移除，使用 RunningHub 模型清單中的扁平檔名。
 
 實際執行環境另由 `rh_dependencies.json` 指定並驗證為 ComfyUI `0.29.2`、
 frontend `1.47.11`。工作流 JSON 仍保留 V4.3 的 frontend `1.45.15` 與原始
@@ -30,7 +32,7 @@ frontend `1.47.11`。工作流 JSON 仍保留 V4.3 的 frontend `1.45.15` 與原
 ## 驗收條件
 
 - 正規化後的工作流功能 SHA-256 必須為
-  `c417d31fb63c7c7ba013addccd56ffc5cc5f78b3fea1752d7df64955795b8864`。
+  `208be32926cc620be2c977019891c5c06255d06112c9acada341e8c4913be337`。
 - 節點 17 必須是 `ImageResizeKJv2`，保有 10 個輸入、4 個輸出及 4 條
   相連連線。
 - 所有連線引用的節點與插槽都存在。
@@ -38,6 +40,8 @@ frontend `1.47.11`。工作流 JSON 仍保留 V4.3 的 frontend `1.45.15` 與原
 - JSON 不得包含來源電腦絕對路徑、RH 預覽網址或測試素材名稱。
 - JSON 的 `extra.frontendVersion` 必須是 V4.3 原值 `1.45.15`，且不得包含
   `extra.scail2_v5`。
+- LoRA 與 SCAIL-2 diffusion model 的 combo 值必須與
+  `rh_dependencies.json` 的模型檔名完全一致，不得包含 `wan\\` 前綴。
 - 本機 ComfyUI `0.29.2` 必須能註冊所有後端節點。
 
 完整長影片生成不屬於結構驗收；避免為了確認 JSON 而消耗大量本機或

@@ -7,6 +7,17 @@ from pathlib import Path
 from typing import Any
 
 
+RH_FLAT_MODEL_NODE_TYPES = {"LoraLoaderModelOnly", "DiffusionModelLoaderKJ"}
+
+
+def _normalize_rh_model_choice(node: dict[str, Any]) -> None:
+    """Use RH's flat combo values instead of local model subdirectories."""
+    if node["type"] not in RH_FLAT_MODEL_NODE_TYPES:
+        return
+    widgets = node["widgets_values"]
+    widgets[0] = str(widgets[0]).replace("\\", "/").rsplit("/", 1)[-1]
+
+
 def _scrub_upload_session_state(node: dict[str, Any]) -> None:
     """Remove machine/user-specific media state without changing workflow behavior."""
     if node["type"] == "MultiImageLoader":
@@ -24,11 +35,13 @@ def _rh_compatibility_snapshot(workflow: dict[str, Any]) -> dict[str, Any]:
 
     Workflow frontend and core-node version fields are deliberately preserved from
     V4.3. They describe the serializer that produced the RH-compatible JSON, not the
-    separately tested ComfyUI runtime.
+    separately tested ComfyUI runtime. Local model subdirectories are normalized to
+    the flat combo values exposed by RunningHub.
     """
     normalized = copy.deepcopy(workflow)
 
     for node in normalized["nodes"]:
+        _normalize_rh_model_choice(node)
         if node["type"] == "MultiImageLoader":
             node["widgets_values"][0] = "<UPLOAD>"
         elif node["type"] == "VHS_LoadVideo":
@@ -44,6 +57,7 @@ def build_workflow(source: dict[str, Any]) -> dict[str, Any]:
     workflow = copy.deepcopy(source)
 
     for node in workflow["nodes"]:
+        _normalize_rh_model_choice(node)
         _scrub_upload_session_state(node)
 
     if _rh_compatibility_snapshot(workflow) != _rh_compatibility_snapshot(source):

@@ -14,7 +14,7 @@ WORKFLOW_PATH = (
 )
 DEPENDENCY_PATH = REPO_ROOT / "rh_dependencies.json"
 V43_FUNCTIONAL_DIGEST = (
-    "c417d31fb63c7c7ba013addccd56ffc5cc5f78b3fea1752d7df64955795b8864"
+    "208be32926cc620be2c977019891c5c06255d06112c9acada341e8c4913be337"
 )
 
 
@@ -27,6 +27,12 @@ def _functional_digest(workflow):
     for node in normalized["nodes"]:
         if node.get("properties", {}).get("cnr_id") == "comfy-core":
             node["properties"]["ver"] = "<CORE_VERSION>"
+        if node["type"] in {"LoraLoaderModelOnly", "DiffusionModelLoaderKJ"}:
+            node["widgets_values"][0] = (
+                str(node["widgets_values"][0])
+                .replace("\\", "/")
+                .rsplit("/", 1)[-1]
+            )
         if node["type"] == "MultiImageLoader":
             node["widgets_values"][0] = "<UPLOAD>"
         elif node["type"] == "VHS_LoadVideo":
@@ -217,6 +223,20 @@ class RunningHubWorkflowContractTests(unittest.TestCase):
                     any(value.endswith(model["name"]) for value in widget_strings),
                     f"Model is not selected by any workflow node: {model['name']}",
                 )
+
+    def test_runninghub_model_combos_use_flat_manifest_names(self):
+        expected = {
+            "LoraLoaderModelOnly": (
+                "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
+            ),
+            "DiffusionModelLoaderKJ": "wan2.1_14B_SCAIL_2_fp8_scaled.safetensors",
+        }
+        for node_type, model_name in expected.items():
+            with self.subTest(node_type=node_type):
+                node = next(
+                    node for node in self.workflow["nodes"] if node["type"] == node_type
+                )
+                self.assertEqual(node["widgets_values"][0], model_name)
 
     def test_sam31_manifest_uses_the_official_checkpoint_path(self):
         sam_model = next(

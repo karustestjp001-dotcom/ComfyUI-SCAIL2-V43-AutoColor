@@ -1429,7 +1429,7 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        "wan\\lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
+        "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
         0.8
       ]
     },
@@ -1570,7 +1570,7 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        "wan\\wan2.1_14B_SCAIL_2_fp8_scaled.safetensors",
+        "wan2.1_14B_SCAIL_2_fp8_scaled.safetensors",
         "default",
         "default",
         false,
