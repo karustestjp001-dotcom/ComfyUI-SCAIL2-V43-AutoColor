@@ -1,32 +1,40 @@
-# SCAIL-2 V5.0 RunningHub 直用版規格
+# SCAIL-2 V5.0.1 RunningHub 直用版規格
 
-## 目標
+## 唯一改版原則
 
-以既有「ComfyUI SCAIL 2 極簡長視頻生成 V4.3 自動校色 RH
-上傳版」為基礎，更新到 2026-07-31 的穩定 ComfyUI 核心與相依節點，
-產出一份可匯入 RunningHub 的 V5.0 工作流。
+V5.0.1 以「ComfyUI SCAIL 2 極簡長視頻生成 V4.3 自動校色 RH
+上傳版」為唯一基準，工作流功能必須原樣保留。允許的差異只有：
 
-## 必要條件
+- ComfyUI 核心節點版本更新為 `0.29.2`。
+- 前端版本更新為 `1.47.11`。
+- 清除來源電腦的圖片檔名、影片檔名與影片預覽暫存。
+- 在 `extra.scail2_v5` 記錄非功能性的版本說明。
 
-- 對齊 ComfyUI 0.29.2 與前端 1.47.11。
-- 保留整合在長影片分段排程器內的 V4.3 自動校色。
-- 使用官方核心節點取代可移除的 KJNodes 與 post-processing 相依。
-- 使用 WhatDreamsCost `MultiImageLoader` 提供 RH 多張參考圖上傳，且批次
-  輸出必須連到排程器。
-- 保留 rgthree `Fast Groups Bypasser` 作為可見的 GIMM 補幀啟用／略過
-  開關。
-- 保留 SCAIL-2 分段規劃、GIMM 補幀與 Video Helper Suite
-  影片輸入／輸出能力。
-- 工作流不得包含本機絕對路徑、舊 RH 預覽網址或使用者測試素材檔名。
-- 列出 RunningHub 必裝的自訂節點、固定驗證版本及模型下載位置。
-- 官方 Relighting LoRA 只支援 replacement 模式，不納入 animation
-  長影片預設路徑。
+不得替換、刪除、增加或重新接線任何功能節點，也不得修改節點參數、
+群組、版面、輸入／輸出插槽或自訂節點版本資訊。
+
+## 必須完整保留
+
+- V4.3 分段自動校色及原有三種校色模式。
+- KJNodes 的 `DiffusionModelLoaderKJ`、`ImageResizeKJv2`、`SetNode`、
+  `GetNode`。
+- `ImageResizeKJv2` 的 `width`、`height` 輸出至 `MultiImageLoader` 的兩條
+  尺寸連線。
+- WhatDreamsCost `MultiImageLoader` 原有多圖介面與動態輸出。
+- rgthree 的 `Label` 與 `Fast Groups Bypasser` 補幀群組開關。
+- GIMM-VFI 補幀、Video Helper Suite 輸入／輸出與 FilmGrain。
+- 原始 42 個節點、32 條連線、5 個群組及所有節點參數。
 
 ## 驗收條件
 
-- JSON 可由 ComfyUI 0.29.2 載入。
-- 工作流中所有節點類型都能在更新後的本機環境註冊。
-- 所有連線引用的節點與插槽存在。
-- RunningHub 匯入後不出現缺失節點；模型與兩個使用者輸入可依清單補齊。
-- 自訂節點單元測試與工作流契約測試全部通過。
-- 不在驗證階段啟動會消耗大量本機時間或 RH 算力的完整長影片生成。
+- 正規化後的工作流功能 SHA-256 必須為
+  `c417d31fb63c7c7ba013addccd56ffc5cc5f78b3fea1752d7df64955795b8864`。
+- 節點 17 必須是 `ImageResizeKJv2`，保有 10 個輸入、4 個輸出及 4 條
+  相連連線。
+- 所有連線引用的節點與插槽都存在。
+- `rh_dependencies.json` 必須涵蓋工作流使用的所有非核心節點。
+- JSON 不得包含來源電腦絕對路徑、RH 預覽網址或測試素材名稱。
+- 本機 ComfyUI `0.29.2` 必須能註冊所有後端節點。
+
+完整長影片生成不屬於結構驗收；避免為了確認 JSON 而消耗大量本機或
+RunningHub 算力。

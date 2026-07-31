@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "workflow_version": "5.0.0",
+  "workflow_version": "5.0.1",
   "tested_at": "2026-07-31",
   "comfyui": {
     "version": "0.29.2",
@@ -22,6 +22,25 @@
       "commit": "aac331566ea0fa23af89b63bfc83e533577b05e6",
       "required_nodes": [
         "SCAIL2SegmentPlanBuilder"
+      ]
+    },
+    {
+      "name": "KJNodes",
+      "repository": "https://github.com/kijai/ComfyUI-KJNodes",
+      "commit": "588badc5252c2b483c8b37110f155973cf39e325",
+      "required_nodes": [
+        "DiffusionModelLoaderKJ",
+        "ImageResizeKJv2",
+        "SetNode",
+        "GetNode"
+      ]
+    },
+    {
+      "name": "Post Processing Nodes",
+      "repository": "https://github.com/EllangoK/ComfyUI-post-processing-nodes",
+      "commit": "c49a05254795403648f2c1774b6f5ea39f96e7d5",
+      "required_nodes": [
+        "FilmGrain"
       ]
     },
     {
@@ -56,7 +75,8 @@
       "repository": "https://github.com/rgthree/rgthree-comfy",
       "commit": "6b76ee6f2c5a007710b5a16f97c94330d6ecc871",
       "required_nodes": [
-        "Fast Groups Bypasser (rgthree)"
+        "Fast Groups Bypasser (rgthree)",
+        "Label (rgthree)"
       ]
     }
   ],

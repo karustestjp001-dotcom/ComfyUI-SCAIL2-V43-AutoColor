@@ -977,32 +977,6 @@ def _first_image(value: torch.Tensor, name: str) -> torch.Tensor:
     return value[:1].detach().contiguous()
 
 
-def _collect_reference_images(
-    inputs: dict[str, Any],
-    requested_count: int,
-) -> tuple[dict[int, torch.Tensor], int]:
-    requested_count = max(1, min(MAX_REFERENCES, int(requested_count)))
-    references: dict[int, torch.Tensor] = {}
-
-    first_input = inputs.get("reference_1")
-    if first_input is not None:
-        if not isinstance(first_input, torch.Tensor) or first_input.ndim != 4:
-            raise ValueError("reference_1 must be a ComfyUI IMAGE tensor.")
-        if first_input.shape[0] <= 0:
-            raise ValueError("reference_1 has no images.")
-        batch_count = min(MAX_REFERENCES, int(first_input.shape[0]))
-        for index in range(batch_count):
-            references[index + 1] = first_input[index : index + 1].detach().contiguous()
-
-    effective_count = max(requested_count, len(references))
-    for index in range(2, effective_count + 1):
-        image = inputs.get(f"reference_{index}")
-        if image is not None:
-            references[index] = _first_image(image, f"reference_{index}")
-
-    return references, effective_count
-
-
 def _encode_text(clip, text: str):
     import nodes
 
@@ -2692,12 +2666,13 @@ class SCAIL2ScheduledLongVideo:
                 f"out={chunk['output_start']}:{chunk['output_end']}"
             )
 
+        references: dict[int, torch.Tensor] = {}
         reference_masks: dict[int, torch.Tensor] = {}
-        references, active_reference_count = _collect_reference_images(
-            kwargs,
-            requested_count=reference_count,
-        )
+        active_reference_count = max(1, min(MAX_REFERENCES, int(reference_count)))
         for index in range(1, active_reference_count + 1):
+            image = kwargs.get(f"reference_{index}")
+            if image is not None:
+                references[index] = _first_image(image, f"reference_{index}")
             mask = kwargs.get(f"reference_{index}_mask")
             if mask is not None:
                 reference_masks[index] = mask.detach().contiguous()
@@ -3109,10 +3084,7 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
         color_correction = _normalize_color_correction_mode(color_correction)
         residual_strength = min(1.0, max(0.0, float(residual_strength)))
 
-        references, active_reference_count = _collect_reference_images(
-            kwargs,
-            requested_count=reference_count,
-        )
+        active_reference_count = max(1, min(MAX_REFERENCES, int(reference_count)))
         segments = _parse_plan(segment_plan, pose_frame_count=int(pose_video.shape[0]), max_frames=max_frames)
         used_refs = sorted({int(segment["reference"]) for segment in segments})
         object_indices = str(object_indices or "")
@@ -3120,6 +3092,11 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
         sort_by = sort_by if sort_by in {"none", "left_to_right", "area"} else "left_to_right"
         replacement_mode = mode == "replacement"
 
+        references: dict[int, torch.Tensor] = {}
+        for index in range(1, active_reference_count + 1):
+            image = kwargs.get(f"reference_{index}")
+            if image is not None:
+                references[index] = _first_image(image, f"reference_{index}")
         missing = [index for index in used_refs if index not in references]
         if missing:
             raise ValueError(f"segment_plan references missing image input(s): {missing}")
@@ -3144,7 +3121,7 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
                 "max_frames": int(max_frames),
                 "max_chunk_frames": int(max_chunk_frames),
                 "overlap_frames": int(overlap_frames),
-                "reference_count": int(active_reference_count),
+                "reference_count": int(reference_count),
                 "color_correction": color_correction,
                 "residual_strength": residual_strength,
                 "object_indices": object_indices,
@@ -3196,7 +3173,7 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
                 max_frames,
                 max_chunk_frames,
                 overlap_frames,
-                active_reference_count,
+                reference_count,
                 color_correction,
                 residual_strength,
                 cache_mode="off",
@@ -3299,7 +3276,7 @@ class SCAIL2ScheduledLongVideoWithSAM(SCAIL2ScheduledLongVideo):
             max_frames,
             max_chunk_frames,
             overlap_frames,
-            active_reference_count,
+            reference_count,
             color_correction,
             residual_strength,
             cache_mode="off",

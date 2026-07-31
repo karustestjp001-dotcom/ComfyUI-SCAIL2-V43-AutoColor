@@ -48,26 +48,6 @@ class ColorModeTests(unittest.TestCase):
         self.assertEqual(SC._normalize_color_correction_mode(True), "v43")
         self.assertEqual(SC._normalize_color_correction_mode(False), "off")
 
-    def test_batch_reference_input_expands_into_numbered_references(self):
-        batch = torch.stack(
-            [
-                torch.full((2, 2, 3), 0.1, dtype=torch.float32),
-                torch.full((2, 2, 3), 0.2, dtype=torch.float32),
-                torch.full((2, 2, 3), 0.3, dtype=torch.float32),
-            ]
-        )
-
-        references, effective_count = SC._collect_reference_images(
-            {"reference_1": batch},
-            requested_count=1,
-        )
-
-        self.assertEqual(effective_count, 3)
-        self.assertEqual(sorted(references), [1, 2, 3])
-        self.assertTrue(torch.equal(references[1], batch[0:1]))
-        self.assertTrue(torch.equal(references[2], batch[1:2]))
-        self.assertTrue(torch.equal(references[3], batch[2:3]))
-
     def test_v43_receives_actual_overlap_and_selected_residual_strength(self):
         frames = torch.zeros((3, 2, 2, 3), dtype=torch.float32)
         current_overlap = torch.zeros((1, 2, 2, 3), dtype=torch.float32)

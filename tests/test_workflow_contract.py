@@ -1,3 +1,5 @@
+import copy
+import hashlib
 import json
 from pathlib import Path
 import tomllib
@@ -11,6 +13,35 @@ WORKFLOW_PATH = (
     / "ComfyUI SCAIL 2 極簡長視頻生成_V5.0_RH直用版.json"
 )
 DEPENDENCY_PATH = REPO_ROOT / "rh_dependencies.json"
+V43_FUNCTIONAL_DIGEST = (
+    "c417d31fb63c7c7ba013addccd56ffc5cc5f78b3fea1752d7df64955795b8864"
+)
+
+
+def _functional_digest(workflow):
+    """Ignore only version metadata and upload/preview session state."""
+    normalized = copy.deepcopy(workflow)
+    normalized.get("extra", {}).pop("frontendVersion", None)
+    normalized.get("extra", {}).pop("scail2_v5", None)
+
+    for node in normalized["nodes"]:
+        if node.get("properties", {}).get("cnr_id") == "comfy-core":
+            node["properties"]["ver"] = "<CORE_VERSION>"
+        if node["type"] == "MultiImageLoader":
+            node["widgets_values"][0] = "<UPLOAD>"
+        elif node["type"] == "VHS_LoadVideo":
+            node["widgets_values"]["video"] = "<UPLOAD>"
+            node["widgets_values"].pop("videopreview", None)
+        elif node["type"] == "VHS_VideoCombine":
+            node["widgets_values"].pop("videopreview", None)
+
+    payload = json.dumps(
+        normalized,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 class RunningHubWorkflowContractTests(unittest.TestCase):
@@ -22,21 +53,88 @@ class RunningHubWorkflowContractTests(unittest.TestCase):
         self.workflow = json.loads(WORKFLOW_PATH.read_text(encoding="utf-8"))
         self.dependencies = json.loads(DEPENDENCY_PATH.read_text(encoding="utf-8"))
 
-    def test_workflow_targets_the_tested_core_and_frontend(self):
+    def test_v5_is_functionally_identical_to_the_v43_rh_baseline(self):
+        self.assertEqual(_functional_digest(self.workflow), V43_FUNCTIONAL_DIGEST)
+        self.assertEqual(len(self.workflow["nodes"]), 42)
+        self.assertEqual(len(self.workflow["links"]), 32)
+        self.assertEqual(len(self.workflow["groups"]), 5)
+        self.assertEqual(self.workflow["last_node_id"], 75)
+        self.assertEqual(self.workflow["last_link_id"], 177)
+
+    def test_only_core_and_frontend_versions_are_updated(self):
         self.assertEqual(self.dependencies["comfyui"]["version"], "0.29.2")
         self.assertEqual(self.workflow["extra"]["frontendVersion"], "1.47.11")
+        core_nodes = [
+            node
+            for node in self.workflow["nodes"]
+            if node.get("properties", {}).get("cnr_id") == "comfy-core"
+        ]
+        self.assertTrue(core_nodes)
+        for node in core_nodes:
+            with self.subTest(node=node["id"]):
+                self.assertEqual(node["properties"]["ver"], "0.29.2")
 
-    def test_workflow_uses_rh_portable_nodes_only(self):
-        node_types = {node["type"] for node in self.workflow["nodes"]}
-        self.assertTrue(
-            {
-                "UNETLoader",
-                "ImageScale",
-                "MultiImageLoader",
-                "SCAIL2SegmentPlanBuilder",
-                "SCAIL2ScheduledLongVideoWithSAMV43",
-            }.issubset(node_types)
+    def test_kjnodes_resize_and_all_four_links_are_preserved(self):
+        node = next(node for node in self.workflow["nodes"] if int(node["id"]) == 17)
+        self.assertEqual(node["type"], "ImageResizeKJv2")
+        self.assertEqual(
+            [item["name"] for item in node["inputs"]],
+            [
+                "image",
+                "mask",
+                "width",
+                "height",
+                "upscale_method",
+                "keep_proportion",
+                "pad_color",
+                "crop_position",
+                "divisible_by",
+                "device",
+            ],
         )
+        self.assertEqual(
+            [item["name"] for item in node["outputs"]],
+            ["IMAGE", "width", "height", "mask"],
+        )
+        self.assertEqual(
+            node["widgets_values"],
+            [720, 1280, "lanczos", "crop", "0, 0, 0", "center", 32, "cpu"],
+        )
+        touching_links = [
+            link for link in self.workflow["links"] if int(link[1]) == 17 or int(link[3]) == 17
+        ]
+        self.assertEqual(
+            touching_links,
+            [
+                [12, 12, 0, 17, 0, "IMAGE"],
+                [146, 17, 0, 65, 6, "IMAGE"],
+                [163, 17, 1, 74, 1, "INT"],
+                [164, 17, 2, 74, 2, "INT"],
+            ],
+        )
+
+    def test_original_reference_loader_and_interpolation_switch_are_preserved(self):
+        reference = next(node for node in self.workflow["nodes"] if int(node["id"]) == 74)
+        self.assertEqual(reference["type"], "MultiImageLoader")
+        self.assertEqual(
+            [item["name"] for item in reference["outputs"]],
+            ["multi_output", "image_1"],
+        )
+        self.assertIn([177, 74, 1, 65, 9, "IMAGE"], self.workflow["links"])
+
+        bypasser = next(
+            node
+            for node in self.workflow["nodes"]
+            if node["type"] == "Fast Groups Bypasser (rgthree)"
+        )
+        self.assertEqual(bypasser["properties"]["matchTitle"], "Frame Interpolation 插帧")
+        self.assertIn(
+            "Frame Interpolation 插帧",
+            [group["title"] for group in self.workflow["groups"]],
+        )
+
+    def test_all_original_custom_node_families_remain_in_the_graph(self):
+        node_types = {node["type"] for node in self.workflow["nodes"]}
         self.assertTrue(
             {
                 "DiffusionModelLoaderKJ",
@@ -45,95 +143,20 @@ class RunningHubWorkflowContractTests(unittest.TestCase):
                 "GetNode",
                 "Label (rgthree)",
                 "FilmGrain",
-            }.isdisjoint(node_types)
+                "MultiImageLoader",
+                "SCAIL2SegmentPlanBuilder",
+                "SCAIL2ScheduledLongVideoWithSAMV43",
+                "DownloadAndLoadGIMMVFIModel",
+                "GIMMVFI_interpolate",
+                "VHS_LoadVideo",
+                "VHS_VideoInfo",
+                "VHS_VideoCombine",
+            }.issubset(node_types)
         )
 
-    def test_reference_loader_supports_runninghub_batch_upload(self):
-        reference_node = next(
-            node for node in self.workflow["nodes"] if int(node["id"]) == 74
-        )
-        self.assertEqual(reference_node["type"], "MultiImageLoader")
-        self.assertEqual(
-            reference_node["properties"]["cnr_id"], "WhatDreamsCost-ComfyUI"
-        )
-        self.assertIn(
-            "image_paths",
-            [input_spec["name"] for input_spec in reference_node["inputs"]],
-        )
-        self.assertIn(
-            "multi_output",
-            [output_spec["name"] for output_spec in reference_node["outputs"]],
-        )
-        self.assertEqual(reference_node["widgets_values"][1:3], [720, 1280])
-        self.assertEqual(reference_node["widgets_values"][4], "crop")
-        reference_link = next(
-            link
-            for link in self.workflow["links"]
-            if int(link[1]) == 74 and int(link[3]) == 65
-        )
-        self.assertEqual(int(reference_link[2]), 0)
-
-    def test_frame_interpolation_has_a_visible_group_bypass_switch(self):
-        bypassers = [
-            node
-            for node in self.workflow["nodes"]
-            if node["type"] == "Fast Groups Bypasser (rgthree)"
-        ]
-        self.assertEqual(len(bypassers), 1)
-        self.assertEqual(
-            bypassers[0]["properties"]["matchTitle"],
-            "Frame Interpolation 插帧",
-        )
-        self.assertIn(
-            "Frame Interpolation 插帧",
-            [group["title"] for group in self.workflow["groups"]],
-        )
-
-    def test_v43_node_points_to_the_rh_installable_repository(self):
-        node = next(
-            node
-            for node in self.workflow["nodes"]
-            if node["type"] == "SCAIL2ScheduledLongVideoWithSAMV43"
-        )
-        self.assertEqual(
-            node["properties"]["aux_id"],
-            "karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor",
-        )
-        self.assertEqual(
-            node["properties"]["cnr_id"], "comfyui-scail2-v43-autocolor"
-        )
-        input_names = [input_spec["name"] for input_spec in node["inputs"]]
-        self.assertIn("cache_mode", input_names)
-        self.assertIn("disk", node["widgets_values"])
-
-    def test_workflow_and_custom_node_versions_are_independent_and_consistent(self):
-        project = tomllib.loads(
-            (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
-        )
-        package_version = project["project"]["version"]
-        custom_node = next(
-            item
-            for item in self.dependencies["custom_nodes"]
-            if item["name"] == "SCAIL2 V4.3 Auto Color"
-        )
-        workflow_node = next(
-            node
-            for node in self.workflow["nodes"]
-            if node["type"] == "SCAIL2ScheduledLongVideoWithSAMV43"
-        )
-
-        self.assertEqual(self.dependencies["workflow_version"], "5.0.0")
-        self.assertEqual(package_version, "2.0.0")
-        self.assertEqual(custom_node["version"], package_version)
-        self.assertEqual(
-            workflow_node["properties"]["ver"], package_version
-        )
-
-    def test_links_only_reference_existing_nodes_and_slots(self):
+    def test_links_reference_existing_nodes_and_slots(self):
         nodes = {int(node["id"]): node for node in self.workflow["nodes"]}
-        for link_id, source_id, source_slot, target_id, target_slot, _ in self.workflow[
-            "links"
-        ]:
+        for link_id, source_id, source_slot, target_id, target_slot, _ in self.workflow["links"]:
             with self.subTest(link=link_id):
                 self.assertIn(int(source_id), nodes)
                 self.assertIn(int(target_id), nodes)
@@ -148,46 +171,49 @@ class RunningHubWorkflowContractTests(unittest.TestCase):
         self.assertNotIn("摩多摩多.mp4", raw)
         self.assertNotIn("146981507_p0_master1200.jpg", raw)
 
-    def test_manifest_lists_every_non_core_node_family(self):
-        repos = {item["repository"] for item in self.dependencies["custom_nodes"]}
-        self.assertEqual(
-            repos,
-            {
-                "https://github.com/karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor",
-                "https://github.com/TTPlanetPig/comfyui_scail2_multi_cond",
-                "https://github.com/kijai/ComfyUI-GIMM-VFI",
-                "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite",
-                "https://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI",
-                "https://github.com/rgthree/rgthree-comfy",
-            },
+    def test_manifest_covers_every_required_custom_node_type(self):
+        workflow_types = {node["type"] for node in self.workflow["nodes"]}
+        manifest_types = {
+            node_type
+            for dependency in self.dependencies["custom_nodes"]
+            for node_type in dependency["required_nodes"]
+        }
+        non_core_types = {
+            node["type"]
+            for node in self.workflow["nodes"]
+            if node["type"] not in {"Note"}
+            and node.get("properties", {}).get("cnr_id") != "comfy-core"
+        }
+        self.assertTrue(non_core_types.issubset(manifest_types))
+        self.assertTrue(manifest_types.issubset(workflow_types))
+
+    def test_custom_node_package_version_matches_the_manifest(self):
+        project = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+        custom_node = next(
+            item
+            for item in self.dependencies["custom_nodes"]
+            if item["name"] == "SCAIL2 V4.3 Auto Color"
         )
+        self.assertEqual(project["project"]["version"], custom_node["version"])
+        self.assertEqual(self.dependencies["workflow_version"], "5.0.1")
 
-    def test_custom_node_versions_match_the_manifest(self):
-        workflow_nodes = {
-            node["type"]: node
+    def test_every_manifest_model_is_selected_by_the_workflow(self):
+        widget_strings = {
+            value.replace("\\\\", "/")
             for node in self.workflow["nodes"]
+            for value in (
+                node.get("widgets_values", [])
+                if isinstance(node.get("widgets_values", []), list)
+                else node.get("widgets_values", {}).values()
+            )
+            if isinstance(value, str)
         }
-        for dependency in self.dependencies["custom_nodes"]:
-            expected_version = dependency.get("commit", dependency.get("version"))
-            for node_type in dependency["required_nodes"]:
-                with self.subTest(node_type=node_type):
-                    self.assertIn(node_type, workflow_nodes)
-                    self.assertEqual(
-                        workflow_nodes[node_type]["properties"]["ver"],
-                        expected_version,
-                    )
-
-    def test_every_manifest_model_is_embedded_for_rh_download(self):
-        expected = {
-            (model["folder"], model["name"], model["url"])
-            for model in self.dependencies["models"]
-        }
-        embedded = {
-            (model["directory"], model["name"], model["url"])
-            for node in self.workflow["nodes"]
-            for model in node.get("properties", {}).get("models", [])
-        }
-        self.assertEqual(embedded, expected)
+        for model in self.dependencies["models"]:
+            with self.subTest(model=model["name"]):
+                self.assertTrue(
+                    any(value.endswith(model["name"]) for value in widget_strings),
+                    f"Model is not selected by any workflow node: {model['name']}",
+                )
 
     def test_sam31_manifest_uses_the_official_checkpoint_path(self):
         sam_model = next(
