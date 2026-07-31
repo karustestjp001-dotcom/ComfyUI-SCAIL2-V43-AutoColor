@@ -32,7 +32,7 @@ class RunningHubWorkflowContractTests(unittest.TestCase):
             {
                 "UNETLoader",
                 "ImageScale",
-                "LoadImage",
+                "MultiImageLoader",
                 "SCAIL2SegmentPlanBuilder",
                 "SCAIL2ScheduledLongVideoWithSAMV43",
             }.issubset(node_types)
@@ -44,10 +44,49 @@ class RunningHubWorkflowContractTests(unittest.TestCase):
                 "SetNode",
                 "GetNode",
                 "Label (rgthree)",
-                "Fast Groups Bypasser (rgthree)",
                 "FilmGrain",
-                "MultiImageLoader",
             }.isdisjoint(node_types)
+        )
+
+    def test_reference_loader_supports_runninghub_batch_upload(self):
+        reference_node = next(
+            node for node in self.workflow["nodes"] if int(node["id"]) == 74
+        )
+        self.assertEqual(reference_node["type"], "MultiImageLoader")
+        self.assertEqual(
+            reference_node["properties"]["cnr_id"], "WhatDreamsCost-ComfyUI"
+        )
+        self.assertIn(
+            "image_paths",
+            [input_spec["name"] for input_spec in reference_node["inputs"]],
+        )
+        self.assertIn(
+            "multi_output",
+            [output_spec["name"] for output_spec in reference_node["outputs"]],
+        )
+        self.assertEqual(reference_node["widgets_values"][1:3], [720, 1280])
+        self.assertEqual(reference_node["widgets_values"][4], "crop")
+        reference_link = next(
+            link
+            for link in self.workflow["links"]
+            if int(link[1]) == 74 and int(link[3]) == 65
+        )
+        self.assertEqual(int(reference_link[2]), 0)
+
+    def test_frame_interpolation_has_a_visible_group_bypass_switch(self):
+        bypassers = [
+            node
+            for node in self.workflow["nodes"]
+            if node["type"] == "Fast Groups Bypasser (rgthree)"
+        ]
+        self.assertEqual(len(bypassers), 1)
+        self.assertEqual(
+            bypassers[0]["properties"]["matchTitle"],
+            "Frame Interpolation 插帧",
+        )
+        self.assertIn(
+            "Frame Interpolation 插帧",
+            [group["title"] for group in self.workflow["groups"]],
         )
 
     def test_v43_node_points_to_the_rh_installable_repository(self):
@@ -118,6 +157,8 @@ class RunningHubWorkflowContractTests(unittest.TestCase):
                 "https://github.com/TTPlanetPig/comfyui_scail2_multi_cond",
                 "https://github.com/kijai/ComfyUI-GIMM-VFI",
                 "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite",
+                "https://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI",
+                "https://github.com/rgthree/rgthree-comfy",
             },
         )
 

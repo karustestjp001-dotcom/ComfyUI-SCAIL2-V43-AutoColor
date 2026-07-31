@@ -15,8 +15,10 @@ that chunk, including a reduced `boundary_overlap` when a reference changes.
 
 V5.0 rebases the scheduler on
 `TTPlanetPig/comfyui_scail2_multi_cond@aac3315`, targets ComfyUI `0.29.0`, and
-removes KJNodes, rgthree, post-processing, and WhatDreamsCost nodes from the RH
-workflow graph. The V4.3 correction algorithm itself is unchanged.
+removes KJNodes and post-processing dependencies from the RH workflow graph.
+It keeps WhatDreamsCost's batch image loader and rgthree's visible group
+bypasser because they are user-facing workflow controls. The V4.3 correction
+algorithm itself is unchanged.
 
 ## Workflow
 
@@ -24,8 +26,9 @@ workflow graph. The V4.3 correction algorithm itself is unchanged.
 workflows/ComfyUI SCAIL 2 極簡長視頻生成_V5.0_RH直用版.json
 ```
 
-The workflow uses the official core `UNETLoader`, `ImageScale`, and `LoadImage`
-nodes. Upload a reference image and a driving video before queueing.
+The workflow uses the official core `UNETLoader` and `ImageScale` nodes, plus
+`MultiImageLoader` for uploading multiple reference images. Upload the reference
+images and a driving video before queueing.
 
 The scheduler exposes three deterministic color modes:
 
@@ -44,14 +47,20 @@ The scheduler exposes three deterministic color modes:
    https://github.com/TTPlanetPig/comfyui_scail2_multi_cond
    https://github.com/kijai/ComfyUI-GIMM-VFI
    https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+   https://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI
+   https://github.com/rgthree/rgthree-comfy
    ```
 
 3. Restart the cloud workspace when installation completes.
 4. Import the V5.0 JSON from the `workflows` folder.
 5. Confirm that `SCAIL2ScheduledLongVideoWithSAMV43` and
    `SCAIL2SegmentPlanBuilder` are not reported as missing.
-6. Resolve the model files listed in `rh_dependencies.json`, then upload the
-   reference image and driving video.
+6. Resolve the model files listed in `rh_dependencies.json`, then use
+   `MultiImageLoader` to batch-upload reference images and upload the driving
+   video. Reference images are center-cropped to `720x1280` so mixed source
+   dimensions still form a valid image batch. Use the visible
+   `Frame Interpolation 插帧` group switch to enable or bypass GIMM frame
+   interpolation.
 
 The V4.3 integration is self-contained; installing the full
 `ComfyUI-CustomNodeKit` is not required. The separate upstream

@@ -15,6 +15,8 @@ V43_PACKAGE_VERSION = "2.0.0"
 UPSTREAM_SCAIL_COMMIT = "aac331566ea0fa23af89b63bfc83e533577b05e6"
 GIMM_COMMIT = "4c9a3123762af85e7c796e41737da0b70c75d72d"
 VHS_COMMIT = "4ee72c065db22c9d96c2427954dc69e7b908444b"
+WHAT_DREAMS_COST_COMMIT = "a3c809c8b593a74c2ddcd6c1f83ad85ebebe3c64"
+RGTHREE_COMMIT = "6b76ee6f2c5a007710b5a16f97c94330d6ecc871"
 GIMM_NODE_TYPES = {"DownloadAndLoadGIMMVFIModel", "GIMMVFI_interpolate"}
 VHS_NODE_TYPES = {"VHS_LoadVideo", "VHS_VideoInfo", "VHS_VideoCombine"}
 
@@ -22,7 +24,6 @@ REMOVE_NODE_TYPES = {
     "SetNode",
     "GetNode",
     "Label (rgthree)",
-    "Fast Groups Bypasser (rgthree)",
     "FilmGrain",
 }
 
@@ -114,35 +115,6 @@ def _transform_image_scale(node: dict[str, Any]) -> None:
             "outputs": [{"name": "IMAGE", "type": "IMAGE", "links": []}],
             "properties": _core_properties("ImageScale"),
             "widgets_values": ["lanczos", 720, 1280, "center"],
-        }
-    )
-
-
-def _transform_reference_loader(node: dict[str, Any]) -> None:
-    node.update(
-        {
-            "type": "LoadImage",
-            "size": [330, 315],
-            "inputs": [
-                {
-                    "name": "image",
-                    "type": "COMBO",
-                    "widget": {"name": "image"},
-                    "link": None,
-                },
-                {
-                    "name": "upload",
-                    "type": "IMAGEUPLOAD",
-                    "widget": {"name": "upload"},
-                    "link": None,
-                },
-            ],
-            "outputs": [
-                {"name": "IMAGE", "type": "IMAGE", "links": []},
-                {"name": "MASK", "type": "MASK", "links": None},
-            ],
-            "properties": _core_properties("LoadImage"),
-            "widgets_values": ["RH_請上傳參考圖.png", "image"],
         }
     )
 
@@ -273,6 +245,20 @@ def _sanitize_widgets(node: dict[str, Any]) -> None:
                 )
             ],
         )
+    elif node["type"] == "MultiImageLoader":
+        widgets = copy.deepcopy(node["widgets_values"])
+        widgets[0] = ""
+        widgets[1] = 720
+        widgets[2] = 1280
+        widgets[4] = "crop"
+        node["widgets_values"] = widgets
+        node["properties"].update(
+            {
+                "aux_id": "WhatDreamsCost/WhatDreamsCost-ComfyUI",
+                "cnr_id": "WhatDreamsCost-ComfyUI",
+                "ver": WHAT_DREAMS_COST_COMMIT,
+            }
+        )
 
 
 def build_workflow(source: dict[str, Any]) -> dict[str, Any]:
@@ -281,7 +267,6 @@ def build_workflow(source: dict[str, Any]) -> dict[str, Any]:
 
     _transform_unet_loader(by_id[13])
     _transform_image_scale(by_id[17])
-    _transform_reference_loader(by_id[74])
     _refresh_core_model_loaders(by_id)
 
     workflow["nodes"] = [
@@ -343,6 +328,14 @@ def build_workflow(source: dict[str, Any]) -> dict[str, Any]:
                     "ver": VHS_COMMIT,
                 }
             )
+        elif node["type"] == "Fast Groups Bypasser (rgthree)":
+            node["properties"].update(
+                {
+                    "aux_id": "rgthree/rgthree-comfy",
+                    "cnr_id": "rgthree-comfy",
+                    "ver": RGTHREE_COMMIT,
+                }
+            )
         elif node["id"] == 50:
             node["widgets_values"] = [
                 "SCAIL-2 V5.0 RH 直用版\n\n"
@@ -351,15 +344,21 @@ def build_workflow(source: dict[str, Any]) -> dict[str, Any]:
                 "https://github.com/karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor\n"
                 "https://github.com/TTPlanetPig/comfyui_scail2_multi_cond\n"
                 "https://github.com/kijai/ComfyUI-GIMM-VFI\n"
-                "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite\n\n"
-                "Upload one reference image and one driving video before queueing.\n"
+                "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite\n"
+                "https://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI\n\n"
+                "https://github.com/rgthree/rgthree-comfy\n\n"
+                "Use MultiImageLoader to batch-upload reference images, then upload "
+                "one driving video before queueing. Use the Frame Interpolation "
+                "group switch to enable or bypass GIMM interpolation.\n"
                 "Relighting LoRA is for replacement mode and is intentionally not enabled "
                 "in this animation workflow."
             ]
         elif node["id"] == 75:
             node["widgets_values"] = [
                 "V5.0 keeps V4.3 chunk color correction (v43/original/off) while "
-                "removing UI-only and local-only node dependencies for RunningHub. "
+                "replacing KJNodes and post-processing dependencies for RunningHub. "
+                "WhatDreamsCost multi-upload and the rgthree interpolation switch "
+                "are intentionally retained. "
                 "Default: v43, residual_strength=0.2, max_offset=0.02."
             ]
 

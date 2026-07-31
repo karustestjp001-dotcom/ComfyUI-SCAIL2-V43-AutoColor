@@ -916,7 +916,7 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        "SCAIL-2 V5.0 RH 直用版\n\nTested: ComfyUI 0.29.0 / frontend 1.47.10\nRequired Git repositories:\nhttps://github.com/karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor\nhttps://github.com/TTPlanetPig/comfyui_scail2_multi_cond\nhttps://github.com/kijai/ComfyUI-GIMM-VFI\nhttps://github.com/Kosinkadink/ComfyUI-VideoHelperSuite\n\nUpload one reference image and one driving video before queueing.\nRelighting LoRA is for replacement mode and is intentionally not enabled in this animation workflow."
+        "SCAIL-2 V5.0 RH 直用版\n\nTested: ComfyUI 0.29.0 / frontend 1.47.10\nRequired Git repositories:\nhttps://github.com/karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor\nhttps://github.com/TTPlanetPig/comfyui_scail2_multi_cond\nhttps://github.com/kijai/ComfyUI-GIMM-VFI\nhttps://github.com/Kosinkadink/ComfyUI-VideoHelperSuite\nhttps://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI\n\nhttps://github.com/rgthree/rgthree-comfy\n\nUse MultiImageLoader to batch-upload reference images, then upload one driving video before queueing. Use the Frame Interpolation group switch to enable or bypass GIMM interpolation.\nRelighting LoRA is for replacement mode and is intentionally not enabled in this animation workflow."
       ],
       "color": "#432",
       "bgcolor": "#653"
@@ -1190,58 +1190,116 @@
     },
     {
       "id": 74,
-      "type": "LoadImage",
+      "type": "MultiImageLoader",
       "pos": [
         -796.8506072653086,
         1302.81532776011
       ],
       "size": [
-        330,
-        315
+        582.9868529692536,
+        485
       ],
       "flags": {},
       "order": 35,
       "mode": 0,
       "inputs": [
         {
-          "name": "image",
-          "type": "COMBO",
+          "localized_name": "image_paths",
+          "name": "image_paths",
+          "type": "STRING",
           "widget": {
-            "name": "image"
+            "name": "image_paths"
           },
           "link": null
         },
         {
-          "name": "upload",
-          "type": "IMAGEUPLOAD",
+          "localized_name": "width",
+          "name": "width",
+          "type": "INT",
           "widget": {
-            "name": "upload"
+            "name": "width"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "height",
+          "name": "height",
+          "type": "INT",
+          "widget": {
+            "name": "height"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "interpolation",
+          "name": "interpolation",
+          "type": "COMBO",
+          "widget": {
+            "name": "interpolation"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "resize_method",
+          "name": "resize_method",
+          "type": "COMBO",
+          "widget": {
+            "name": "resize_method"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "multiple_of",
+          "name": "multiple_of",
+          "type": "INT",
+          "widget": {
+            "name": "multiple_of"
+          },
+          "link": null
+        },
+        {
+          "localized_name": "img_compression",
+          "name": "img_compression",
+          "type": "INT",
+          "widget": {
+            "name": "img_compression"
           },
           "link": null
         }
       ],
       "outputs": [
         {
-          "name": "IMAGE",
+          "localized_name": "multi_output",
+          "name": "multi_output",
           "type": "IMAGE",
           "links": [
             177
           ]
         },
         {
-          "name": "MASK",
-          "type": "MASK",
+          "name": "image_1",
+          "type": "IMAGE",
           "links": null
         }
       ],
       "properties": {
-        "Node name for S&R": "LoadImage",
-        "cnr_id": "comfy-core",
-        "ver": "0.29.0"
+        "cnr_id": "WhatDreamsCost-ComfyUI",
+        "ver": "a3c809c8b593a74c2ddcd6c1f83ad85ebebe3c64",
+        "Node name for S&R": "MultiImageLoader",
+        "ue_properties": {
+          "version": "7.0.1"
+        },
+        "aux_id": "WhatDreamsCost/WhatDreamsCost-ComfyUI"
       },
       "widgets_values": [
-        "RH_請上傳參考圖.png",
-        "image"
+        "",
+        720,
+        1280,
+        "lanczos",
+        "crop",
+        16,
+        0,
+        ""
       ],
       "color": "#323",
       "bgcolor": "#535"
@@ -1747,6 +1805,48 @@
       ],
       "color": "#323",
       "bgcolor": "#535"
+    },
+    {
+      "id": 54,
+      "type": "Fast Groups Bypasser (rgthree)",
+      "pos": [
+        1603.523193359375,
+        1477.9144287109375
+      ],
+      "size": [
+        323.30035400390625,
+        58
+      ],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "label": "OPT_CONNECTION",
+          "name": "OPT_CONNECTION",
+          "type": "*",
+          "links": null
+        }
+      ],
+      "properties": {
+        "matchColors": "",
+        "matchTitle": "Frame Interpolation 插帧",
+        "showNav": true,
+        "showAllGraphs": true,
+        "sort": "position",
+        "customSortAlphabet": "",
+        "toggleRestriction": "default",
+        "ue_properties": {
+          "version": "7.0.1",
+          "widget_ue_connectable": {}
+        },
+        "aux_id": "rgthree/rgthree-comfy",
+        "cnr_id": "rgthree-comfy",
+        "ver": "6b76ee6f2c5a007710b5a16f97c94330d6ecc871"
+      },
+      "color": "#432",
+      "bgcolor": "#653"
     },
     {
       "id": 9,
@@ -2447,7 +2547,7 @@
         "widget_ue_connectable": {}
       },
       "widgets_values": [
-        "V5.0 keeps V4.3 chunk color correction (v43/original/off) while removing UI-only and local-only node dependencies for RunningHub. Default: v43, residual_strength=0.2, max_offset=0.02."
+        "V5.0 keeps V4.3 chunk color correction (v43/original/off) while replacing KJNodes and post-processing dependencies for RunningHub. WhatDreamsCost multi-upload and the rgthree interpolation switch are intentionally retained. Default: v43, residual_strength=0.2, max_offset=0.02."
       ],
       "color": "#2D6A4F",
       "bgcolor": "#40916C"

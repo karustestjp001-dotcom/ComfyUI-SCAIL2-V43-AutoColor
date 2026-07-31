@@ -10,8 +10,11 @@
 
 - 對齊 ComfyUI 0.29.0 與前端 1.47.10。
 - 保留整合在長影片分段排程器內的 V4.3 自動校色。
-- 使用官方核心節點取代可移除的 KJNodes、rgthree、
-  WhatDreamsCost 與 post-processing 相依。
+- 使用官方核心節點取代可移除的 KJNodes 與 post-processing 相依。
+- 使用 WhatDreamsCost `MultiImageLoader` 提供 RH 多張參考圖上傳，且批次
+  輸出必須連到排程器。
+- 保留 rgthree `Fast Groups Bypasser` 作為可見的 GIMM 補幀啟用／略過
+  開關。
 - 保留 SCAIL-2 分段規劃、GIMM 補幀與 Video Helper Suite
   影片輸入／輸出能力。
 - 工作流不得包含本機絕對路徑、舊 RH 預覽網址或使用者測試素材檔名。
@@ -27,4 +30,3 @@
 - RunningHub 匯入後不出現缺失節點；模型與兩個使用者輸入可依清單補齊。
 - 自訂節點單元測試與工作流契約測試全部通過。
 - 不在驗證階段啟動會消耗大量本機時間或 RH 算力的完整長影片生成。
-

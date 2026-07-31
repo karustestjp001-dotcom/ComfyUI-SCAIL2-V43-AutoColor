@@ -42,6 +42,22 @@
         "VHS_VideoInfo",
         "VHS_VideoCombine"
       ]
+    },
+    {
+      "name": "WhatDreamsCost Multi Image Loader",
+      "repository": "https://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI",
+      "commit": "a3c809c8b593a74c2ddcd6c1f83ad85ebebe3c64",
+      "required_nodes": [
+        "MultiImageLoader"
+      ]
+    },
+    {
+      "name": "rgthree-comfy",
+      "repository": "https://github.com/rgthree/rgthree-comfy",
+      "commit": "6b76ee6f2c5a007710b5a16f97c94330d6ecc871",
+      "required_nodes": [
+        "Fast Groups Bypasser (rgthree)"
+      ]
     }
   ],
   "models": [
