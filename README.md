@@ -1,7 +1,8 @@
-# ComfyUI SCAIL-2 V4.3 Auto Color
+# ComfyUI SCAIL-2 V5.0 RH Workflow + V4.3 Auto Color
 
-This ComfyUI custom-node package provides the exact node type required by the
-SCAIL-2 V4.3 auto-color workflow:
+This repository contains the RunningHub-portable V5.0 long-video workflow and
+the exact custom node required to keep V4.3 color correction inside the
+SCAIL-2 chunk scheduler:
 
 ```text
 SCAIL2ScheduledLongVideoWithSAMV43
@@ -12,6 +13,20 @@ It combines the SCAIL-2 scheduled long-video Internal SAM scheduler with
 after every generated chunk. The correction receives the actual overlap for
 that chunk, including a reduced `boundary_overlap` when a reference changes.
 
+V5.0 rebases the scheduler on
+`TTPlanetPig/comfyui_scail2_multi_cond@aac3315`, targets ComfyUI `0.29.0`, and
+removes KJNodes, rgthree, post-processing, and WhatDreamsCost nodes from the RH
+workflow graph. The V4.3 correction algorithm itself is unchanged.
+
+## Workflow
+
+```text
+workflows/ComfyUI SCAIL 2 極簡長視頻生成_V5.0_RH直用版.json
+```
+
+The workflow uses the official core `UNETLoader`, `ImageScale`, and `LoadImage`
+nodes. Upload a reference image and a driving video before queueing.
+
 The scheduler exposes three deterministic color modes:
 
 - `v43`: CustomNodeKit V4.3 auto correction;
@@ -20,20 +35,27 @@ The scheduler exposes three deterministic color modes:
 
 ## RunningHub installation
 
-1. Open `Manager` in the RunningHub cloud workspace.
-2. Select `Install via Git URL`.
-3. Enter this repository URL:
+1. Use a RunningHub workspace with ComfyUI `0.29.0` or a compatible newer
+   version.
+2. Open `Manager` and install these repositories through `Install via Git URL`:
 
    ```text
    https://github.com/karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor
+   https://github.com/TTPlanetPig/comfyui_scail2_multi_cond
+   https://github.com/kijai/ComfyUI-GIMM-VFI
+   https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
    ```
 
-4. Restart the ComfyUI workspace when installation completes.
-5. Reload the workflow and verify that
-   `SCAIL2ScheduledLongVideoWithSAMV43` is no longer reported as missing.
+3. Restart the cloud workspace when installation completes.
+4. Import the V5.0 JSON from the `workflows` folder.
+5. Confirm that `SCAIL2ScheduledLongVideoWithSAMV43` and
+   `SCAIL2SegmentPlanBuilder` are not reported as missing.
+6. Resolve the model files listed in `rh_dependencies.json`, then upload the
+   reference image and driving video.
 
-The package is self-contained for the V4.3 integration. Installing the full
-`ComfyUI-CustomNodeKit` separately is not required for this workflow.
+The V4.3 integration is self-contained; installing the full
+`ComfyUI-CustomNodeKit` is not required. The separate upstream
+`comfyui_scail2_multi_cond` repository supplies the segment-plan builder.
 
 ## Integrated color settings
 
@@ -47,6 +69,9 @@ overlap_count = actual chunk overlap
 
 Do not add a second color-correction node after the final frames; this scheduler
 already performs correction inside its chunk loop.
+
+The official SCAIL-2 Relighting LoRA is intended for replacement mode and is
+not enabled in this animation workflow.
 
 V4.3 failures are reported as errors instead of silently falling back to the
 original correction, so A/B tests always reflect the selected mode.

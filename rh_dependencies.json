@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "workflow_version": "5.0.0",
+  "tested_at": "2026-07-31",
+  "comfyui": {
+    "version": "0.29.0",
+    "commit": "a8c44f9b2a0678ac4082e3529a3f43db7472acfe",
+    "frontend": "1.47.10"
+  },
+  "custom_nodes": [
+    {
+      "name": "SCAIL2 V4.3 Auto Color",
+      "repository": "https://github.com/karustestjp001-dotcom/ComfyUI-SCAIL2-V43-AutoColor",
+      "version": "2.0.0",
+      "required_nodes": [
+        "SCAIL2ScheduledLongVideoWithSAMV43"
+      ]
+    },
+    {
+      "name": "SCAIL-2 Multi Condition",
+      "repository": "https://github.com/TTPlanetPig/comfyui_scail2_multi_cond",
+      "commit": "aac331566ea0fa23af89b63bfc83e533577b05e6",
+      "required_nodes": [
+        "SCAIL2SegmentPlanBuilder"
+      ]
+    },
+    {
+      "name": "GIMM VFI",
+      "repository": "https://github.com/kijai/ComfyUI-GIMM-VFI",
+      "commit": "4c9a3123762af85e7c796e41737da0b70c75d72d",
+      "required_nodes": [
+        "DownloadAndLoadGIMMVFIModel",
+        "GIMMVFI_interpolate"
+      ]
+    },
+    {
+      "name": "Video Helper Suite",
+      "repository": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite",
+      "commit": "4ee72c065db22c9d96c2427954dc69e7b908444b",
+      "required_nodes": [
+        "VHS_LoadVideo",
+        "VHS_VideoInfo",
+        "VHS_VideoCombine"
+      ]
+    }
+  ],
+  "models": [
+    {
+      "folder": "diffusion_models",
+      "name": "wan2.1_14B_SCAIL_2_fp8_scaled.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/SCAIL-2/resolve/main/diffusion_models/wan2.1_14B_SCAIL_2_fp8_scaled.safetensors"
+    },
+    {
+      "folder": "loras",
+      "name": "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors",
+      "url": "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
+    },
+    {
+      "folder": "text_encoders",
+      "name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+    },
+    {
+      "folder": "vae",
+      "name": "wan_2.1_vae.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/vae/wan_2.1_vae.safetensors"
+    },
+    {
+      "folder": "clip_vision",
+      "name": "clip_vision_h.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors"
+    },
+    {
+      "folder": "checkpoints",
+      "name": "sam3.1_multiplex_fp16.safetensors",
+      "url": "https://huggingface.co/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors"
+    }
+  ]
+}
