@@ -1,8 +1,9 @@
-# ComfyUI SCAIL-2 V5.0.1 RH Workflow + V4.3 Auto Color
+# ComfyUI SCAIL-2 V5.0.2 RH Workflow + V4.3 Auto Color
 
 這個版本是「ComfyUI SCAIL 2 極簡長視頻生成 V4.3 自動校色 RH
-上傳版」的功能完整複製版。V5.0.1 只更新 ComfyUI 核心／前端版本資訊，
-不再替換節點、不刪除相依、不修改參數，也不重接工作流。
+上傳版」的功能完整複製版。V5.0.2 更新的是實際 ComfyUI 執行環境；工作流
+JSON 保留 V4.3 的序列化版本標記，避免 RunningHub 將新執行環境版本誤當成
+工作流格式版本。不替換節點、不刪除相依、不修改參數，也不重接工作流。
 
 ## 工作流
 
@@ -12,7 +13,8 @@ workflows/ComfyUI SCAIL 2 極簡長視頻生成_V5.0_RH直用版.json
 
 已驗證的結構：
 
-- ComfyUI `0.29.2`、frontend `1.47.11`
+- 執行環境：ComfyUI `0.29.2`、frontend `1.47.11`
+- RH 工作流相容標記：保留 V4.3 的 frontend `1.45.15` 與原始核心節點標記
 - 42 個節點、32 條連線、5 個群組
 - `ImageResizeKJv2` 完整 10 輸入／4 輸出
 - 寬高輸出仍連到 `MultiImageLoader`
@@ -38,8 +40,9 @@ https://github.com/WhatDreamsCost/WhatDreamsCost-ComfyUI
 https://github.com/rgthree/rgthree-comfy
 ```
 
-安裝完成後重啟 RunningHub 工作空間，再匯入 JSON。模型檔名、下載位置與
-本機驗證版本列在 `rh_dependencies.json`。
+安裝完成後重啟 RunningHub 工作空間，再把 JSON 匯入「新的」RH 工作流；
+不要覆蓋已出現 `graphToPrompt`／`fixBadLinks` 錯誤的舊 V5 工作流紀錄。模型
+檔名、下載位置與本機驗證版本列在 `rh_dependencies.json`。
 
 ## 使用重點
 

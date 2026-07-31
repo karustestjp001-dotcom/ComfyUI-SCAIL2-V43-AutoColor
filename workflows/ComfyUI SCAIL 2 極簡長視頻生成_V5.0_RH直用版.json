@@ -61,7 +61,7 @@
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.29.2",
+        "ver": "0.24.0",
         "Node name for S&R": "CLIPLoader",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -114,7 +114,7 @@
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.29.2",
+        "ver": "0.24.0",
         "Node name for S&R": "CLIPVisionLoader",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -584,7 +584,7 @@
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.29.2",
+        "ver": "0.24.0",
         "Node name for S&R": "VAELoader",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -957,7 +957,7 @@
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.29.2",
+        "ver": "0.24.0",
         "Node name for S&R": "KSamplerSelect",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -1033,7 +1033,7 @@
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.29.2",
+        "ver": "0.24.0",
         "Node name for S&R": "BasicScheduler",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -1094,7 +1094,7 @@
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.29.2",
+        "ver": "0.24.0",
         "Node name for S&R": "CLIPTextEncode",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -1160,7 +1160,7 @@
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.29.2",
+        "ver": "0.24.0",
         "Node name for S&R": "CheckpointLoaderSimple",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -1324,7 +1324,7 @@
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.29.2",
+        "ver": "0.24.0",
         "Node name for S&R": "ModelSamplingSD3",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -1419,7 +1419,7 @@
       ],
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.29.2",
+        "ver": "0.24.0",
         "Node name for S&R": "LoraLoaderModelOnly",
         "ue_properties": {
           "widget_ue_connectable": {},
@@ -1617,7 +1617,7 @@
       "title": "SEG Prompt 分割提示词",
       "properties": {
         "cnr_id": "comfy-core",
-        "ver": "0.29.2",
+        "ver": "0.25.0",
         "Node name for S&R": "PrimitiveStringMultiline",
         "ue_properties": {
           "version": "7.0.1",
@@ -3610,7 +3610,7 @@
       4
     ],
     "VHS_latentpreviewrate": 0,
-    "frontendVersion": "1.47.11",
+    "frontendVersion": "1.45.15",
     "VHS_latentpreview": false,
     "ds": {
       "scale": 0.7247295000000201,
@@ -3618,11 +3618,6 @@
         651.9425388549928,
         -687.0830472955928
       ]
-    },
-    "scail2_v5": {
-      "workflow_version": "5.0.1",
-      "tested_core": "0.29.2",
-      "base": "V4.3 RH exact functional clone"
     }
   },
   "version": 0.4

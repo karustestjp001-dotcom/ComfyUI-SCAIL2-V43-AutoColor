@@ -7,10 +7,6 @@ from pathlib import Path
 from typing import Any
 
 
-CORE_VERSION = "0.29.2"
-FRONTEND_VERSION = "1.47.11"
-
-
 def _scrub_upload_session_state(node: dict[str, Any]) -> None:
     """Remove machine/user-specific media state without changing workflow behavior."""
     if node["type"] == "MultiImageLoader":
@@ -23,15 +19,16 @@ def _scrub_upload_session_state(node: dict[str, Any]) -> None:
         node["widgets_values"].pop("videopreview", None)
 
 
-def _functional_snapshot(workflow: dict[str, Any]) -> dict[str, Any]:
-    """Normalize the only fields V5 is allowed to change from the V4.3 baseline."""
+def _rh_compatibility_snapshot(workflow: dict[str, Any]) -> dict[str, Any]:
+    """Normalize only machine/user-specific media state.
+
+    Workflow frontend and core-node version fields are deliberately preserved from
+    V4.3. They describe the serializer that produced the RH-compatible JSON, not the
+    separately tested ComfyUI runtime.
+    """
     normalized = copy.deepcopy(workflow)
-    normalized.get("extra", {}).pop("frontendVersion", None)
-    normalized.get("extra", {}).pop("scail2_v5", None)
 
     for node in normalized["nodes"]:
-        if node.get("properties", {}).get("cnr_id") == "comfy-core":
-            node["properties"]["ver"] = "<CORE_VERSION>"
         if node["type"] == "MultiImageLoader":
             node["widgets_values"][0] = "<UPLOAD>"
         elif node["type"] == "VHS_LoadVideo":
@@ -47,20 +44,10 @@ def build_workflow(source: dict[str, Any]) -> dict[str, Any]:
     workflow = copy.deepcopy(source)
 
     for node in workflow["nodes"]:
-        if node.get("properties", {}).get("cnr_id") == "comfy-core":
-            node["properties"]["ver"] = CORE_VERSION
         _scrub_upload_session_state(node)
 
-    workflow.setdefault("extra", {})
-    workflow["extra"]["frontendVersion"] = FRONTEND_VERSION
-    workflow["extra"]["scail2_v5"] = {
-        "workflow_version": "5.0.1",
-        "tested_core": CORE_VERSION,
-        "base": "V4.3 RH exact functional clone",
-    }
-
-    if _functional_snapshot(workflow) != _functional_snapshot(source):
-        raise AssertionError("V5 build changed the V4.3 workflow graph or behavior")
+    if _rh_compatibility_snapshot(workflow) != _rh_compatibility_snapshot(source):
+        raise AssertionError("V5 build changed the V4.3 RH-compatible workflow")
     return workflow
 
 

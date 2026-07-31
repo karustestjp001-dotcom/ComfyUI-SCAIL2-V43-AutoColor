@@ -61,18 +61,21 @@ class RunningHubWorkflowContractTests(unittest.TestCase):
         self.assertEqual(self.workflow["last_node_id"], 75)
         self.assertEqual(self.workflow["last_link_id"], 177)
 
-    def test_only_core_and_frontend_versions_are_updated(self):
+    def test_runtime_is_updated_without_rewriting_v43_workflow_metadata(self):
         self.assertEqual(self.dependencies["comfyui"]["version"], "0.29.2")
-        self.assertEqual(self.workflow["extra"]["frontendVersion"], "1.47.11")
+        self.assertEqual(self.dependencies["comfyui"]["frontend"], "1.47.11")
+        self.assertEqual(self.workflow["extra"]["frontendVersion"], "1.45.15")
+        self.assertNotIn("scail2_v5", self.workflow["extra"])
         core_nodes = [
             node
             for node in self.workflow["nodes"]
             if node.get("properties", {}).get("cnr_id") == "comfy-core"
         ]
         self.assertTrue(core_nodes)
-        for node in core_nodes:
-            with self.subTest(node=node["id"]):
-                self.assertEqual(node["properties"]["ver"], "0.29.2")
+        self.assertEqual(
+            {node["properties"]["ver"] for node in core_nodes},
+            {"0.24.0", "0.25.0"},
+        )
 
     def test_kjnodes_resize_and_all_four_links_are_preserved(self):
         node = next(node for node in self.workflow["nodes"] if int(node["id"]) == 17)
@@ -195,7 +198,7 @@ class RunningHubWorkflowContractTests(unittest.TestCase):
             if item["name"] == "SCAIL2 V4.3 Auto Color"
         )
         self.assertEqual(project["project"]["version"], custom_node["version"])
-        self.assertEqual(self.dependencies["workflow_version"], "5.0.1")
+        self.assertEqual(self.dependencies["workflow_version"], "5.0.2")
 
     def test_every_manifest_model_is_selected_by_the_workflow(self):
         widget_strings = {
